@@ -1,0 +1,56 @@
+Prompt
+Vous agirez comme un Ingénieur DevOps et Développeur Golang expert dont la mission est de concevoir l'architecture et de générer le code source complet pour un système de gestion centralisée des certificats Certbot. Le système doit être robuste, sécurisé uniquement par mTLS, et efficace.
+
+Exigences de Log: Toutes les erreurs (client et serveur) devront être journalisées dans le syslog local avec la facilité daemon et la priorité info (par exemple, en utilisant la bibliothèque standard de Golang log/syslog).
+
+Objectifs du Système (Code en Golang) :
+
+Client (Agent de Mise à Jour) : Un agent léger, destiné à être exécuté hebdomadairement via cron sur des serveurs distants. Il doit accepter un argument de ligne de commande représentant le nom du domaine (ex: ./client example.com).
+a. Communication Sécurisée : L'agent doit établir une connexion mTLS sécurisée avec le serveur.
+b. Validation par Hachage : Pour le domaine spécifié, le client doit calculer le hachage SHA256 local des trois fichiers de certificats (fullchain.pem, privkey.pem, chain.pem) situés dans le dossier /etc/letsencrypt/live/<domain>/ et envoyer cette information au serveur.
+c. Mise à Jour Conditionnelle : Si le serveur indique que le hachage des fichiers Certbot les plus récents est différent, le client doit télécharger et remplacer les trois fichiers localement dans le dossier spécifié /etc/letsencrypt/live/<domain>/. Si le dossier n'existe pas, il doit être créé.
+
+Serveur (Central de Distribution) :
+a. Renouvellement Certbot : Cette tâche est déléguée à un script shell ou une crontab externe. Le programme serveur Golang ne gère que la lecture et la distribution des certificats.
+b. Distribution API (mTLS) : Une API sécurisée (via HTTP/TLS) pour que les clients puissent s'authentifier et communiquer via mTLS. L'API doit accepter un domaine et les hachages locaux du client. Elle doit :
+i. Comparer les hachages clients avec ceux des fichiers les plus récents sur le serveur, stockés dans /etc/letsencrypt/live/<domain>/.
+ii. Si les hachages sont différents, servir les trois fichiers (fullchain.pem, privkey.pem, chain.pem) de manière atomique au client.
+iii. Si les hachages sont identiques, renvoyer une réponse indiquant qu'aucune mise à jour n'est nécessaire.
+c. Endpoint de Téléchargement Web (mTLS) : Un point de terminaison HTTP/TLS qui doit être protégé par mTLS. Il doit permettre le téléchargement direct des trois fichiers de certificats (fullchain.pem, privkey.pem, chain.pem) d'un domaine spécifié, sans interface utilisateur listant les domaines. L'authentification mTLS est la seule méthode de sécurité requise pour ce point de terminaison.
+
+Le code généré sera en Golang. Les commentaires, les noms de variables et de fonctions dans le code doivent être en anglais. Le texte d'accompagnement, l'architecture et les explications seront en français. Fournissez le code du Client et du Serveur, y compris les fonctions pour la gestion des hachages, la configuration mTLS et la journalisation Syslog.
+
+Communication Style:
+J'ai fourni les détails suivants :
+
+"Je voudrais que tu m'aides a faire un outils pour centraliser la mise a jour des certificats générés localement par certbot."
+
+"il y aura plusieurs parties."
+
+"a) Sur les clients déportés, un outil permettant d'etre installé dans une crontab, se connectant au serveur toutes les semaines, et mettant a jour le certificat, la clef et l'autorité ( il y a 3 noms connus ), si le certificat a ete modifié."
+
+"b) Sur le serveur qui hébergera les certificats cert-bot, une partie qui renouvellera automatiquement les certificats expirant."
+
+"c) sur le serveur qui hébergera, une interface web, permettant de télécharger les certificats"
+
+"pour ces outils, je préfèrerais du code golang"
+
+"On utilisera mTLS entre le client et les serveurs, ce qui servira d'authentification. ( Je ferais les certificats et l'authorité a part )."
+
+"on utilisera le chemin de base letsencrypt, et les noms usuels des fichiers"
+
+"la fonction de renouvellement (partie 2a) peut etre faire directement par un script shell."
+
+"Pour la partie Web, pas d'affichage de liste, le serveur ne doit servir qu'a des transferts de fichiers des dossiers de certificats."
+
+"Pour la logique de mise a jour du client, un hash du certificat sera fait comme comparaison."
+
+"Pour sécuriser le point de terminaison de téléchargement Web (Partie 2c), si la communication mTLS est vérifiée, c'est suffisant."
+
+"le client de mise a jour prendra un argument qui est une partie du dossier contenant les certificats a mettre a jour, et déduira le nom utilisé comme domaine"
+
+"En donnant l'argument example.com, on ira mettre a jour les certificats du dossier /etc/letsencrypt/live/example.com"
+
+"toutes les erreurs seront envoyées dans syslog avec daemon.info"
+
+
