@@ -23,7 +23,7 @@ const (
 	TLSKeyFile     = "tls/client.key"
 	TLSCaFile      = "tls/ca.crt"
 	// ServerURL      = "https://cert-server.example.com:8443" // **MUST BE CHANGED**
-	ServerURL      = "https://neptune-2024.si.uvsq.fr:8443" // **MUST BE CHANGED**
+	ServerURL = "https://neptune-2024.si.uvsq.fr:8443" // **MUST BE CHANGED**
 )
 
 var syslogger *log.Logger
@@ -37,8 +37,8 @@ type CertificateHashes struct {
 
 // ServerResponse is used for the /api/check response.
 type ServerResponse struct {
-	UpdateRequired bool                 `json:"update_required"`
-	Message        string               `json:"message"`
+	UpdateRequired bool               `json:"update_required"`
+	Message        string             `json:"message"`
 	ServerHashes   *CertificateHashes `json:"server_hashes,omitempty"`
 }
 
@@ -75,7 +75,7 @@ func calculateFileHash(filePath string) (string, error) {
 // getLocalCertbotHashes calculates and returns the hashes of the local Certbot files for a given domain.
 func getLocalCertbotHashes(domain string) (*CertificateHashes, error) {
 	domainPath := filepath.Join(CertbotBaseDir, domain)
-	
+
 	fullchainPath := filepath.Join(domainPath, "fullchain.pem")
 	privkeyPath := filepath.Join(domainPath, "privkey.pem")
 	chainPath := filepath.Join(domainPath, "chain.pem")
@@ -136,7 +136,7 @@ func getTLSClient() (*http.Client, error) {
 // downloadAndSaveFile downloads a file from the server and saves it locally.
 func downloadAndSaveFile(client *http.Client, domain, fileName, localPath string) error {
 	downloadURL := fmt.Sprintf("%s/download/%s/%s", ServerURL, domain, fileName)
-	
+
 	resp, err := client.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("failed to download %s: %w", fileName, err)
@@ -165,7 +165,13 @@ func downloadAndSaveFile(client *http.Client, domain, fileName, localPath string
 	if err != nil {
 		return fmt.Errorf("failed to save downloaded content to %s: %w", localPath, err)
 	}
-	
+
+	// Set file permissions to 600
+	err = os.Chmod(localPath, os.FileMode(0600))
+	if err != nil {
+		log.Fatalf("Erreur lors de la modification des permissions (chmod): %v", err)
+	}
+
 	syslogger.Printf("Successfully downloaded and saved: %s", localPath)
 	return nil
 }
@@ -175,7 +181,7 @@ func main() {
 		syslogger.Fatalf("Client error: Usage: %s <domain_name>", os.Args[0])
 	}
 	domain := os.Args[1]
-	
+
 	// 1. Calculate local hashes
 	localHashes, err := getLocalCertbotHashes(domain)
 	if err != nil {
@@ -195,7 +201,7 @@ func main() {
 		"domain": domain,
 		"hashes": localHashes,
 	})
-	
+
 	resp, err := client.Post(checkURL, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		syslogger.Fatalf("Client error: Failed to connect or send check request to server: %v", err)
@@ -229,7 +235,7 @@ func main() {
 				syslogger.Fatalf("Client error: Failed to download and save %s: %v", fileName, err)
 			}
 		}
-		
+
 		syslogger.Printf("SUCCESS: All certificates for %s updated successfully.", domain)
 	} else {
 		syslogger.Printf("Skipping update for %s. Certificates are current.", domain)
