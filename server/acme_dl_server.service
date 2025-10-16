@@ -1,0 +1,14 @@
+[Unit]
+Description=ACME Certificates download service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/local/acme_dl/acme_dl_server
+WorkingDirectory=/local/acme_dl
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
