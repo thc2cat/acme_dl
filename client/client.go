@@ -22,8 +22,9 @@ const (
 	TLSCertFile    = "tls/client.crt"
 	TLSKeyFile     = "tls/client.key"
 	TLSCaFile      = "tls/ca.crt"
-	// ServerURL      = "https://cert-server.example.com:8443" // **MUST BE CHANGED**
-	ServerURL = "https://neptune-2024.si.uvsq.fr:8443" // **MUST BE CHANGED**
+
+	// **MUST BE CHANGED**
+	ServerURL = "https://cert-server.example.com:8443"
 )
 
 var syslogger *log.Logger
